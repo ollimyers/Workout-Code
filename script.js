@@ -1,99 +1,76 @@
 let timerInterval;
-let progressInterval;
+let currentPhase = 0;
+let currentCycle = 1;
+let currentReps = 0;
 
 function startTimer(mode) {
+  // Clear any existing timers and reset state
   clearInterval(timerInterval);
-  clearInterval(progressInterval);
-  
-  let cycles, shortReps, longReps;
-  
+  currentPhase = 0;
+  currentCycle = 1;
+  currentReps = 0;
+
+  let workoutConfig;
+
   switch (mode) {
     case '3x12':
-      cycles = 3;
-      shortReps = 12;
-      longReps = 12;
-      runTimer(cycles, shortReps, longReps);
+      workoutConfig = { cycles: 3, reps: 12, breakDuration: 45 };
       break;
     case '2xLong1xSemi':
-      cycles = 2;
-      shortReps = 12;
-      longReps = 12;
-      runTimer(cycles, shortReps, longReps);
+      workoutConfig = { cycles: 2, reps: 12, breakDuration: 45 };
       break;
     case '2xSemi1xLong':
-      cycles = 2;
-      shortReps = 6;
-      longReps = 12;
-      runTimer(cycles, shortReps, longReps);
+      workoutConfig = { cycles: 2, reps: [6, 12], breakDuration: 45 };
       break;
+    default:
+      console.log("Invalid mode selected");
+      return;
   }
+
+  runWorkout(workoutConfig);
 }
 
-function runTimer(cycles, shortReps, longReps) {
-  let totalTime = (shortReps + longReps) * cycles * 7 + 45 * (cycles - 1); // Adjust based on total workout time.
-  let remainingTime = totalTime;
+function runWorkout(config) {
+  let isSemiLong = Array.isArray(config.reps);
   
-  let currentCycle = 1;
-  let currentRep = 0;
-  
-  function updateProgress() {
-    let progress = ((totalTime - remainingTime) / totalTime) * 100;
-    document.getElementById('progress').style.width = progress + '%';
-  }
-  
-  function nextAction() {
-    if (currentCycle > cycles) {
+  function nextPhase() {
+    if (currentCycle > config.cycles) {
       clearInterval(timerInterval);
       document.body.className = '';
+      document.getElementById('countdown').innerText = "DONE!";
       return;
     }
-    
-    if (currentRep < shortReps) {
-      // Short Reps
-      startRep(5, 'green', 'Short Rep');
-      currentRep++;
-    } else if (currentRep < longReps) {
-      // Long Reps
-      startRep(5, 'green', 'Long Rep');
-      currentRep++;
-    } else {
-      // Breaks between cycles
-      startBreak(45, 'yellow', 'Cycle Break');
-      currentCycle++;
-      currentRep = 0;
-    }
+
+    if (currentReps < (isSemiLong && currentCycle === 2 ? config.reps[1] : config.reps)) {
+      // Reps (5 seconds per rep, 2-second break in between)
+      startPhase(5, 'green', `Rep ${currentReps + 1}/${config.reps}`, nextPhase);
+      currentReps++;
+    } else if (currentReps === config.reps) {
+      // Long break between cycles (45 seconds)
+      startPhase(config.breakDuration, 'yellow', 'Long Break', () => {
+        currentReps = 0;
+        currentCycle++;
+        nextPhase();
+      });
+    } 
   }
-  
-  nextAction();
-  
+
+  nextPhase();
+}
+
+function startPhase(duration, colorClass, label, callback) {
+  document.body.className = colorClass;
+  let timeLeft = duration;
+  document.getElementById('countdown').innerText = formatTime(timeLeft);
+
   timerInterval = setInterval(() => {
-    remainingTime--;
-    updateProgress();
-    nextAction();
-  }, 1000);
-}
-
-function startRep(duration, colorClass, label) {
-  let timeLeft = duration;
-  document.body.className = colorClass;
-  document.getElementById('countdown').innerText = formatTime(timeLeft);
-  
-  let repInterval = setInterval(() => {
     timeLeft--;
     document.getElementById('countdown').innerText = formatTime(timeLeft);
-    if (timeLeft <= 0) clearInterval(repInterval);
-  }, 1000);
-}
 
-function startBreak(duration, colorClass, label) {
-  let timeLeft = duration;
-  document.body.className = colorClass;
-  document.getElementById('countdown').innerText = formatTime(timeLeft);
-  
-  let breakInterval = setInterval(() => {
-    timeLeft--;
-    document.getElementById('countdown').innerText = formatTime(timeLeft);
-    if (timeLeft <= 0) clearInterval(breakInterval);
+    if (timeLeft < 0) {
+      clearInterval(timerInterval);
+      callback();
+    }
   }, 1000);
 }
 
