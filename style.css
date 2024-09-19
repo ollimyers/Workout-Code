@@ -1,3 +1,4 @@
+/* General styles */
 body {
     margin: 0;
     padding: 0;
@@ -9,15 +10,23 @@ body {
     font-family: Arial, sans-serif;
   }
   
+  h1 {
+    margin-bottom: 20px;
+    font-size: 32px;
+    color: #333;
+  }
+  
+  /* Countdown timer */
   #countdown {
     font-size: 48px;
-    color: white;  /* Ensure the text is white, visible on all backgrounds */
-    z-index: 100;  /* Ensure it is above other elements */
-    visibility: visible;  /* Always ensure the visibility */
+    color: white;  /* Ensure the text is white to contrast with backgrounds */
+    z-index: 100;  /* Ensure it's always on top */
+    visibility: visible;  /* Ensure it's always visible */
     position: relative;
     text-align: center;
   }
   
+  /* Progress bar container */
   #progress-container {
     width: 80%;
     background-color: lightgray;
@@ -26,6 +35,7 @@ body {
     position: relative;
   }
   
+  /* Progress bar */
   #progress {
     height: 100%;
     width: 0%;
@@ -33,6 +43,7 @@ body {
     transition: width 0.1s ease;
   }
   
+  /* Background colors for different phases */
   body.green {
     background-color: green;
   }
@@ -43,5 +54,25 @@ body {
   
   body.yellow {
     background-color: yellow;
+  }
+  
+  /* Button styles */
+  .controls {
+    margin-top: 20px;
+  }
+  
+  button {
+    padding: 10px 20px;
+    margin: 0 10px;
+    font-size: 16px;
+    cursor: pointer;
+    border: none;
+    background-color: #007BFF;
+    color: white;
+    border-radius: 5px;
+  }
+  
+  button:hover {
+    background-color: #0056b3;
   }
   

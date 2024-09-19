@@ -7,22 +7,18 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="container">
-    <h1>Workout Timer</h1>
-    <div class="timer-display">
-      <div id="countdown">00:00</div>
-    </div>
-    <div class="progress-bar">
-      <div id="progress" style="width: 0%;"></div>
-    </div>
-    <div id="progress-container">
-        <div id="progress"></div>
-      </div>      
-    <div class="mode-selector">
-      <button onclick="startTimer('3x12')">3 x 12</button>
-      <button onclick="startTimer('2xLong1xSemi')">2 x Long / 1 x Semi</button>
-      <button onclick="startTimer('2xSemi1xLong')">2 x Semi / 1 x Long</button>
-    </div>
+  <h1>Workout Timer</h1>
+  
+  <div id="countdown"></div>
+
+  <div id="progress-container">
+    <div id="progress"></div>
+  </div>
+
+  <div class="controls">
+    <button onclick="startTimer('3x12')">3 x 12</button>
+    <button onclick="startTimer('2xLong1xSemi')">2 x Long/1 x Semi</button>
+    <button onclick="startTimer('2xSemi1xLong')">2 x Semi/1 x Long</button>
   </div>
 
   <script src="script.js"></script>
