@@ -49,9 +49,9 @@ function startTimer(mode) {
 
 function calculateTotalTime(config) {
   if (Array.isArray(config.cycles)) {
-    totalTime = config.cycles[0] * 7 + config.cycles[1] * 7 + config.cycleBreak;
+    totalTime = (config.cycles[0] * 7) + (config.cycles[1] * 7) + (config.cycleBreak);  // Total time in seconds
   } else {
-    totalTime = config.cycles * config.repsPerCycle * 7 + (config.cycles - 1) * config.cycleBreak;
+    totalTime = (config.cycles * config.repsPerCycle * 7) + ((config.cycles - 1) * config.cycleBreak);
   }
 }
 
@@ -107,7 +107,7 @@ function startPhase(duration, colorClass, label, callback) {
   timerInterval = setInterval(() => {
     if (!paused) {
       document.getElementById('countdown').innerText = formatTime(timeLeftGlobal);
-      updateProgress(duration);
+      updateProgress(1);  // Update progress for each second
 
       timeLeftGlobal--;
 
@@ -140,8 +140,8 @@ function rewindPhase() {
   nextPhase();  // Restart the current phase
 }
 
-function updateProgress(phaseDuration) {
-  timeElapsed += 1;
+function updateProgress(seconds) {
+  timeElapsed += seconds;  // Update elapsed time by seconds
   const progressPercentage = (timeElapsed / totalTime) * 100;
   document.getElementById('progress').style.width = `${progressPercentage}%`;
 }
