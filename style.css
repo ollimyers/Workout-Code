@@ -19,9 +19,9 @@ body {
   /* Countdown timer */
   #countdown {
     font-size: 48px;
-    color: white;  /* Ensure the text is white to contrast with backgrounds */
-    z-index: 100;  /* Ensure it's always on top */
-    visibility: visible;  /* Ensure it's always visible */
+    color: white;
+    z-index: 100;
+    visibility: visible;
     position: relative;
     text-align: center;
   }

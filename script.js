@@ -1,6 +1,9 @@
 let timerInterval;
 let totalTime = 0;
 let timeElapsed = 0;
+let paused = false;
+let timeLeftGlobal = 0;
+let currentPhaseCallback;
 
 // Workout configurations
 const workoutModes = {
@@ -9,15 +12,23 @@ const workoutModes = {
   '2xSemi1xLong': { cycles: [6, 12], cycleBreak: 45 }
 };
 
+// State variables for phases
+let currentCycle = 0;
+let currentRep = 0;
+let config = {};
+let totalCycles = 0;
+
 function startTimer(mode) {
   clearInterval(timerInterval);  // Clear any existing timers
   document.body.className = '';  // Reset background color
   document.getElementById('countdown').innerText = '';  // Clear countdown
   document.getElementById('progress').style.width = '0%';  // Reset progress bar
-
   timeElapsed = 0;  // Reset progress counter
 
-  const config = workoutModes[mode];  // Get selected workout mode
+  paused = false;
+  document.getElementById('pause-btn').innerText = "Pause";
+
+  config = workoutModes[mode];  // Get selected workout mode
 
   if (!config) {
     console.log("Invalid mode selected");
@@ -27,82 +38,106 @@ function startTimer(mode) {
   // Calculate total workout time for the progress bar
   calculateTotalTime(config);
   
+  // Reset state variables
+  currentCycle = 0;
+  currentRep = 0;
+  totalCycles = Array.isArray(config.cycles) ? config.cycles.length : config.cycles;
+
   // Start the workout
   runWorkout(config);
 }
 
 function calculateTotalTime(config) {
   if (Array.isArray(config.cycles)) {
-    totalTime = config.cycles[0] * 7 + config.cycles[1] * 7 + config.cycleBreak;  // Semi/Long mode
+    totalTime = config.cycles[0] * 7 + config.cycles[1] * 7 + config.cycleBreak;
   } else {
-    totalTime = config.cycles * config.repsPerCycle * 7 + (config.cycles - 1) * config.cycleBreak;  // Standard mode
+    totalTime = config.cycles * config.repsPerCycle * 7 + (config.cycles - 1) * config.cycleBreak;
   }
 }
 
 function runWorkout(config) {
-  let currentCycle = 0;
-  let currentRep = 0;
-  let totalCycles = Array.isArray(config.cycles) ? config.cycles.length : config.cycles;
+  nextPhase();
+}
 
-  function nextPhase() {
-    if (currentCycle >= totalCycles) {
-      // End the workout
-      clearInterval(timerInterval);
-      document.getElementById('countdown').innerText = "DONE!";
-      document.body.className = '';
-      return;
-    }
-
-    let totalReps = Array.isArray(config.cycles) ? config.cycles[currentCycle] : config.repsPerCycle;
-
-    if (currentRep < totalReps) {
-      // Start rep phase
-      startPhase(5, 'green', `Rep ${currentRep + 1}/${totalReps}`, () => {
-        // Start short break after rep
-        startPhase(2, 'red', 'Short Break', () => {
-          currentRep++;
-          nextPhase();  // Go to next phase
-        });
-      });
-    } else {
-      // Skip long break after last cycle
-      if (currentCycle < totalCycles - 1) {
-        // Start long break after cycle
-        startPhase(config.cycleBreak, 'yellow', 'Long Break', () => {
-          currentCycle++;
-          currentRep = 0;
-          nextPhase();  // Move to next cycle
-        });
-      } else {
-        // No long break after last cycle
-        currentCycle++;
-        currentRep = 0;
-        nextPhase();
-      }
-    }
+function nextPhase() {
+  if (currentCycle >= totalCycles) {
+    // End the workout
+    clearInterval(timerInterval);
+    document.getElementById('countdown').innerText = "DONE!";
+    document.body.className = '';
+    return;
   }
 
-  nextPhase();  // Start first phase
+  let totalReps = Array.isArray(config.cycles) ? config.cycles[currentCycle] : config.repsPerCycle;
+
+  if (currentRep < totalReps) {
+    // Start rep phase
+    startPhase(5, 'green', `Rep ${currentRep + 1}/${totalReps}`, () => {
+      startPhase(2, 'red', 'Short Break', () => {
+        currentRep++;
+        nextPhase();  // Go to next phase
+      });
+    });
+  } else {
+    if (currentCycle < totalCycles - 1) {
+      // Start long break after cycle
+      startPhase(config.cycleBreak, 'yellow', 'Long Break', () => {
+        currentCycle++;
+        currentRep = 0;
+        nextPhase();  // Move to next cycle
+      });
+    } else {
+      // No long break after last cycle
+      currentCycle++;
+      currentRep = 0;
+      nextPhase();
+    }
+  }
 }
 
 function startPhase(duration, colorClass, label, callback) {
   clearInterval(timerInterval);
-  document.body.className = colorClass;  // Set background color
+  document.body.className = colorClass;
   document.getElementById('countdown').innerText = formatTime(duration);
-  document.getElementById('countdown').style.visibility = 'visible';  // Ensure visibility
+  document.getElementById('countdown').style.visibility = 'visible';
 
-  let timeLeft = duration;
+  timeLeftGlobal = duration;
+  currentPhaseCallback = callback;
+
   timerInterval = setInterval(() => {
-    document.getElementById('countdown').innerText = formatTime(timeLeft);
-    updateProgress(duration);
+    if (!paused) {
+      document.getElementById('countdown').innerText = formatTime(timeLeftGlobal);
+      updateProgress(duration);
 
-    timeLeft--;
+      timeLeftGlobal--;
 
-    if (timeLeft < 0) {
-      clearInterval(timerInterval);
-      callback();
+      if (timeLeftGlobal < 0) {
+        clearInterval(timerInterval);
+        callback();
+      }
     }
   }, 1000);
+}
+
+function pauseWorkout() {
+  if (!paused) {
+    paused = true;
+    document.getElementById('pause-btn').innerText = "Resume";
+  } else {
+    paused = false;
+    document.getElementById('pause-btn').innerText = "Pause";
+  }
+}
+
+function skipPhase() {
+  clearInterval(timerInterval);
+  currentPhaseCallback();
+}
+
+function rewindPhase() {
+  clearInterval(timerInterval);
+  currentRep = Math.max(currentRep - 1, 0);  // Move back a rep but not below 0
+  nextPhase();  // Restart the current phase
 }
 
 function updateProgress(phaseDuration) {
