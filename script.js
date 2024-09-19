@@ -1,75 +1,91 @@
-let timerInterval;
-let currentPhase = 0;
-let currentCycle = 1;
-let currentReps = 0;
+let timerInterval;  // This will store the active interval
 
 function startTimer(mode) {
-  // Clear any existing timers and reset state
+  // Clear any existing timers and reset the body class
   clearInterval(timerInterval);
-  currentPhase = 0;
-  currentCycle = 1;
-  currentReps = 0;
-
+  document.body.className = '';
+  
+  // Workout modes configuration
   let workoutConfig;
 
   switch (mode) {
     case '3x12':
-      workoutConfig = { cycles: 3, reps: 12, breakDuration: 45 };
+      workoutConfig = { cycles: 3, repsPerCycle: 12, isSemiLong: false };
       break;
     case '2xLong1xSemi':
-      workoutConfig = { cycles: 2, reps: 12, breakDuration: 45 };
+      workoutConfig = { cycles: 2, repsPerCycle: 12, isSemiLong: false };
       break;
     case '2xSemi1xLong':
-      workoutConfig = { cycles: 2, reps: [6, 12], breakDuration: 45 };
+      workoutConfig = { cycles: [6, 12], isSemiLong: true };  // First cycle has 6 reps, second has 12 reps
       break;
     default:
       console.log("Invalid mode selected");
       return;
   }
 
+  // Start the workout
   runWorkout(workoutConfig);
 }
 
 function runWorkout(config) {
-  let isSemiLong = Array.isArray(config.reps);
-  
+  let currentCycle = 0;
+  let totalCycles = config.isSemiLong ? config.cycles.length : config.cycles;  // If semi-long, use the length of the cycles array
+  let currentRep = 0;
+  let totalReps = config.isSemiLong ? config.cycles[currentCycle] : config.repsPerCycle;
+
   function nextPhase() {
-    if (currentCycle > config.cycles) {
+    // If we're done with all cycles, finish the workout
+    if (currentCycle >= totalCycles) {
       clearInterval(timerInterval);
-      document.body.className = '';
       document.getElementById('countdown').innerText = "DONE!";
+      document.body.className = '';
       return;
     }
 
-    if (currentReps < (isSemiLong && currentCycle === 2 ? config.reps[1] : config.reps)) {
-      // Reps (5 seconds per rep, 2-second break in between)
-      startPhase(5, 'green', `Rep ${currentReps + 1}/${config.reps}`, nextPhase);
-      currentReps++;
-    } else if (currentReps === config.reps) {
-      // Long break between cycles (45 seconds)
-      startPhase(config.breakDuration, 'yellow', 'Long Break', () => {
-        currentReps = 0;
-        currentCycle++;
-        nextPhase();
+    // If reps are remaining in the current cycle
+    if (currentRep < totalReps) {
+      startRep(5, 'green', `Rep ${currentRep + 1}/${totalReps}`, () => {
+        // After rep, start a short break
+        startBreak(2, 'red', 'Short Break', () => {
+          currentRep++;
+          nextPhase();  // Move to the next rep or phase
+        });
       });
-    } 
+    } else {
+      // After finishing the reps, do a long break and move to the next cycle
+      startBreak(45, 'yellow', 'Cycle Break', () => {
+        currentCycle++;
+        currentRep = 0;
+        totalReps = config.isSemiLong ? config.cycles[currentCycle] : config.repsPerCycle;  // Update reps for the new cycle
+        nextPhase();  // Move to the next cycle
+      });
+    }
   }
 
-  nextPhase();
+  nextPhase();  // Start the first phase (rep or break)
 }
 
-function startPhase(duration, colorClass, label, callback) {
-  document.body.className = colorClass;
-  let timeLeft = duration;
-  document.getElementById('countdown').innerText = formatTime(timeLeft);
+function startRep(duration, colorClass, label, callback) {
+  runPhase(duration, colorClass, label, callback);
+}
 
+function startBreak(duration, colorClass, label, callback) {
+  runPhase(duration, colorClass, label, callback);
+}
+
+function runPhase(duration, colorClass, label, callback) {
+  clearInterval(timerInterval);  // Clear any previous timer
+  document.body.className = colorClass;  // Set the background color
+  document.getElementById('countdown').innerText = formatTime(duration);
+
+  let timeLeft = duration;
   timerInterval = setInterval(() => {
     timeLeft--;
     document.getElementById('countdown').innerText = formatTime(timeLeft);
 
-    if (timeLeft < 0) {
-      clearInterval(timerInterval);
-      callback();
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);  // Clear the current timer
+      callback();  // Move to the next phase when time is up
     }
   }, 1000);
 }
