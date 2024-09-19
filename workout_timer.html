@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Workout Timer</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Workout Timer</h1>
+    <div class="timer-display">
+      <div id="countdown">00:00</div>
+    </div>
+    <div class="progress-bar">
+      <div id="progress" style="width: 0%;"></div>
+    </div>
+    <div class="mode-selector">
+      <button onclick="startTimer('3x12')">3 x 12</button>
+      <button onclick="startTimer('2xLong1xSemi')">2 x Long / 1 x Semi</button>
+      <button onclick="startTimer('2xSemi1xLong')">2 x Semi / 1 x Long</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
