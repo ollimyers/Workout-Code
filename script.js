@@ -131,12 +131,14 @@ function pauseWorkout() {
 
 function skipPhase() {
   clearInterval(timerInterval);
-  currentPhaseCallback();
+  timeElapsed += timeLeftGlobal;  // Add remaining time to elapsed time
+  currentPhaseCallback();  // Call the callback to move to the next phase
 }
 
 function rewindPhase() {
   clearInterval(timerInterval);
   currentRep = Math.max(currentRep - 1, 0);  // Move back a rep but not below 0
+  timeElapsed -= 5;  // Subtract 5 seconds for the last rep
   nextPhase();  // Restart the current phase
 }
 
