@@ -1,59 +1,51 @@
 let timerInterval;
-let totalTime = 0; // Total time for the workout
-let timeElapsed = 0; // Time elapsed for the progress bar
+let totalTime = 0;
+let timeElapsed = 0;
+
+// Workout configurations
+const workoutModes = {
+  '3x12': { cycles: 3, repsPerCycle: 12, cycleBreak: 45 },
+  '2xLong1xSemi': { cycles: 2, repsPerCycle: 12, cycleBreak: 45 },
+  '2xSemi1xLong': { cycles: [6, 12], cycleBreak: 45 }
+};
 
 function startTimer(mode) {
-  // Clear any existing timers and reset
   clearInterval(timerInterval);
   document.body.className = '';
   document.getElementById('countdown').innerText = '';
-  timeElapsed = 0;
-  document.getElementById('progress').style.width = '0%'; // Reset progress bar
+  document.getElementById('progress').style.width = '0%';
 
-  // Workout configurations
-  let workoutConfig;
+  timeElapsed = 0;  // Reset progress
 
-  switch (mode) {
-    case '3x12':
-      workoutConfig = { cycles: 3, repsPerCycle: 12, isSemiLong: false };
-      break;
-    case '2xLong1xSemi':
-      workoutConfig = { cycles: 2, repsPerCycle: 12, isSemiLong: false };
-      break;
-    case '2xSemi1xLong':
-      workoutConfig = { cycles: [6, 12], isSemiLong: true };
-      break;
-    default:
-      console.log("Invalid mode selected");
-      return;
+  const config = workoutModes[mode];
+
+  if (!config) {
+    console.log("Invalid mode selected");
+    return;
   }
 
-  // Calculate total workout time for the progress bar
-  calculateTotalTime(workoutConfig);
+  // Calculate total workout time
+  calculateTotalTime(config);
   
-  // Start the workout
-  runWorkout(workoutConfig);
+  // Start workout sequence
+  runWorkout(config);
 }
 
 function calculateTotalTime(config) {
-  let totalReps = 0;
-  if (config.isSemiLong) {
-    totalReps = config.cycles[0] * 7 + config.cycles[1] * 7; // 5 sec rep + 2 sec break per rep
-    totalTime = totalReps + 2 * 45; // 45 sec break between cycles
+  if (Array.isArray(config.cycles)) {
+    totalTime = config.cycles[0] * 7 + config.cycles[1] * 7 + config.cycleBreak;  // 7 seconds per rep/break
   } else {
-    totalReps = config.cycles * config.repsPerCycle * 7;
-    totalTime = totalReps + (config.cycles - 1) * 45; // Long break only between cycles
+    totalTime = config.cycles * config.repsPerCycle * 7 + (config.cycles - 1) * config.cycleBreak;
   }
 }
 
 function runWorkout(config) {
   let currentCycle = 0;
-  let totalCycles = config.isSemiLong ? config.cycles.length : config.cycles;
   let currentRep = 0;
-  let totalReps = config.isSemiLong ? config.cycles[currentCycle] : config.repsPerCycle;
+  let totalCycles = Array.isArray(config.cycles) ? config.cycles.length : config.cycles;
 
   function nextPhase() {
-    // If we're done with all cycles, finish the workout
+    // End workout after all cycles
     if (currentCycle >= totalCycles) {
       clearInterval(timerInterval);
       document.getElementById('countdown').innerText = "DONE!";
@@ -61,26 +53,28 @@ function runWorkout(config) {
       return;
     }
 
-    // Handle reps within the current cycle
+    let totalReps = Array.isArray(config.cycles) ? config.cycles[currentCycle] : config.repsPerCycle;
+
     if (currentRep < totalReps) {
-      startRep(5, 'green', `Rep ${currentRep + 1}/${totalReps}`, () => {
-        // After rep, start a short break (2 seconds)
-        startBreak(2, 'red', 'Short Break', () => {
+      // Start rep phase
+      startPhase(5, 'green', `Rep ${currentRep + 1}/${totalReps}`, () => {
+        // Start short break after each rep
+        startPhase(2, 'red', 'Short Break', () => {
           currentRep++;
-          nextPhase();  // Move to the next rep or phase
+          nextPhase();
         });
       });
     } else {
-      // After all reps, take a long break (45 seconds) except at the last cycle
+      // If last cycle, skip the long break
       if (currentCycle < totalCycles - 1) {
-        startBreak(45, 'yellow', 'Long Break', () => {
+        // Start long break after a cycle
+        startPhase(config.cycleBreak, 'yellow', 'Long Break', () => {
           currentCycle++;
-          currentRep = 0;
-          totalReps = config.isSemiLong ? config.cycles[currentCycle] : config.repsPerCycle;  // Adjust reps for the next cycle
-          nextPhase();  // Move to the next cycle
+          currentRep = 0;  // Reset reps for the next cycle
+          nextPhase();
         });
       } else {
-        // No long break after the final cycle
+        // Move directly to the next cycle without a long break
         currentCycle++;
         currentRep = 0;
         nextPhase();
@@ -88,32 +82,25 @@ function runWorkout(config) {
     }
   }
 
-  nextPhase();  // Start the first phase (rep or break)
+  nextPhase();  // Start first phase
 }
 
-function startRep(duration, colorClass, label, callback) {
-  runPhase(duration, colorClass, label, callback);
-}
-
-function startBreak(duration, colorClass, label, callback) {
-  runPhase(duration, colorClass, label, callback);
-}
-
-function runPhase(duration, colorClass, label, callback) {
-  clearInterval(timerInterval);  // Clear any previous timer
-  document.body.className = colorClass;  // Set the background color
+function startPhase(duration, colorClass, label, callback) {
+  clearInterval(timerInterval);
+  document.body.className = colorClass;
   document.getElementById('countdown').innerText = formatTime(duration);
-  document.getElementById('countdown').style.visibility = 'visible'; // Ensure visibility
+  document.getElementById('countdown').style.visibility = 'visible'; // Ensure timer text is visible
 
   let timeLeft = duration;
   timerInterval = setInterval(() => {
     document.getElementById('countdown').innerText = formatTime(timeLeft);
+    updateProgress(duration);
+
     timeLeft--;
-    updateProgress(duration);  // Update progress bar
 
     if (timeLeft < 0) {
-      clearInterval(timerInterval);  // Clear the current timer
-      callback();  // Move to the next phase when time is up
+      clearInterval(timerInterval);
+      callback();
     }
   }, 1000);
 }
