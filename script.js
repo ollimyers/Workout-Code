@@ -21,7 +21,7 @@ let totalCycles = 0;
 function startTimer(mode) {
   clearInterval(timerInterval);  // Clear any existing timers
   document.body.className = '';  // Reset background color
-  document.getElementById('countdown').innerText = '';  // Clear countdown
+  document.getElementById('countdown').innerText = '00:00';  // Reset countdown
   document.getElementById('progress').style.width = '0%';  // Reset progress bar
   document.getElementById('counter').innerText = 'Rep 0/0, Set 0/0';  // Reset counter
   timeElapsed = 0;  // Reset progress counter
@@ -72,7 +72,7 @@ function nextPhase() {
   let totalReps = Array.isArray(config.cycles) ? config.cycles[currentCycle] : config.repsPerCycle;
 
   if (currentRep < totalReps) {
-    // Update the counter
+    // Update the counter with correct reps and sets
     updateCounter(currentRep + 1, totalReps, currentCycle + 1, totalCycles);
 
     // Start rep phase
