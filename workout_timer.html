@@ -1,32 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Workout Timer</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workout Timer</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <h1>Workout Timer</h1>
-  
-  <div id="countdown"></div>
-
-  <div id="progress-container">
-    <div id="progress"></div>
-  </div>
-
-  <div class="controls">
-    <button onclick="startTimer('3x12')">3 x 12</button>
-    <button onclick="startTimer('2xLong1xSemi')">2 x Long/1 x Semi</button>
-    <button onclick="startTimer('2xSemi1xLong')">2 x Semi/1 x Long</button>
-  </div>
-
-  <div class="controls">
-    <button id="pause-btn" onclick="pauseWorkout()">Pause</button>
-    <button onclick="skipPhase()">Skip</button>
-    <button onclick="rewindPhase()">Rewind</button>
-  </div>
-
-  <script src="script.js"></script>
+    <div class="container">
+        <h1>Workout Timer</h1>
+        <div id="countdown">00:00</div>
+        <div id="progress-container">
+            <div id="progress"></div>
+        </div>
+        <div id="counter">Rep 0/0, Set 0/0</div> <!-- Added Counter -->
+        <div class="controls">
+            <button id="pause-btn" onclick="pauseWorkout()">Pause</button>
+            <button id="skip-btn" onclick="skipPhase()">Skip</button>
+            <button id="rewind-btn" onclick="rewindPhase()">Rewind</button>
+        </div>
+        <div class="modes">
+            <button onclick="startTimer('3x12')">3 x 12</button>
+            <button onclick="startTimer('2xLong1xSemi')">2 x Long / 1 x Semi</button>
+            <button onclick="startTimer('2xSemi1xLong')">2 x Semi / 1 x Long</button>
+        </div>
+    </div>
+    <script src="script.js"></script>
 </body>
 </html>

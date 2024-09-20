@@ -23,6 +23,7 @@ function startTimer(mode) {
   document.body.className = '';  // Reset background color
   document.getElementById('countdown').innerText = '';  // Clear countdown
   document.getElementById('progress').style.width = '0%';  // Reset progress bar
+  document.getElementById('counter').innerText = 'Rep 0/0, Set 0/0';  // Reset counter
   timeElapsed = 0;  // Reset progress counter
 
   paused = false;
@@ -71,6 +72,9 @@ function nextPhase() {
   let totalReps = Array.isArray(config.cycles) ? config.cycles[currentCycle] : config.repsPerCycle;
 
   if (currentRep < totalReps) {
+    // Update the counter
+    updateCounter(currentRep + 1, totalReps, currentCycle + 1, totalCycles);
+
     // Start rep phase
     startPhase(5, 'green', `Rep ${currentRep + 1}/${totalReps}`, () => {
       startPhase(2, 'red', 'Short Break', () => {
@@ -158,6 +162,10 @@ function updateProgress(seconds) {
   if (progressPercentage <= 100) {
     document.getElementById('progress').style.width = `${progressPercentage}%`;
   }
+}
+
+function updateCounter(rep, totalReps, cycle, totalCycles) {
+  document.getElementById('counter').innerText = `Rep ${rep}/${totalReps}, Set ${cycle}/${totalCycles}`;
 }
 
 function formatTime(seconds) {
