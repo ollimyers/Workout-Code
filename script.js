@@ -137,15 +137,27 @@ function skipPhase() {
 
 function rewindPhase() {
   clearInterval(timerInterval);
-  currentRep = Math.max(currentRep - 1, 0);  // Move back a rep but not below 0
-  timeElapsed -= 5;  // Subtract 5 seconds for the last rep
+  timeElapsed -= 7;  // Rewind time for the last rep/break duration (5+2 seconds)
+
+  if (currentRep > 0) {
+    // Move back to the previous rep
+    currentRep--;
+  } else if (currentCycle > 0) {
+    // Move to the last rep of the previous cycle
+    currentCycle--;
+    currentRep = Array.isArray(config.cycles) ? config.cycles[currentCycle] - 1 : config.repsPerCycle - 1;
+  }
+
   nextPhase();  // Restart the current phase
 }
 
 function updateProgress(seconds) {
   timeElapsed += seconds;  // Update elapsed time by seconds
   const progressPercentage = (timeElapsed / totalTime) * 100;
-  document.getElementById('progress').style.width = `${progressPercentage}%`;
+
+  if (progressPercentage <= 100) {
+    document.getElementById('progress').style.width = `${progressPercentage}%`;
+  }
 }
 
 function formatTime(seconds) {
