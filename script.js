@@ -12,6 +12,11 @@ const workoutModes = {
   '2xSemi1xLong': { cycles: [6, 12], cycleBreak: 45 }
 };
 
+// Sounds for different phases
+const repSound = new Audio('ding.mp3'); // Single ding sound
+const miniBreakSound = new Audio('double-ding.mp3'); // Double ding sound
+const longBreakSound = new Audio('long-ding.mp3'); // Long ding sound
+
 // State variables for phases
 let currentCycle = 0;
 let currentRep = 0;
@@ -76,8 +81,14 @@ function nextPhase() {
     updateCounter(currentRep + 1, totalReps, currentCycle + 1, totalCycles);
 
     // Start rep phase
-    startPhase(5, 'green', `Rep ${currentRep + 1}/${totalReps}`, () => {
-      startPhase(2, 'red', 'Short Break', () => {
+    startPhase(5, 'red', `Rep ${currentRep + 1}/${totalReps}`, () => {
+      // Play single ding sound
+      repSound.play();
+
+      startPhase(2, 'green', 'Mini Break', () => {
+        // Play double ding sound
+        miniBreakSound.play();
+
         currentRep++;
         nextPhase();  // Go to next phase
       });
@@ -86,6 +97,9 @@ function nextPhase() {
     if (currentCycle < totalCycles - 1) {
       // Start long break after cycle
       startPhase(config.cycleBreak, 'yellow', 'Long Break', () => {
+        // Play long ding sound
+        longBreakSound.play();
+
         currentCycle++;
         currentRep = 0;
         nextPhase();  // Move to next cycle
