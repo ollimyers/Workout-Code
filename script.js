@@ -4,6 +4,7 @@ let timeElapsed = 0;
 let paused = false;
 let timeLeftGlobal = 0;
 let currentPhaseCallback;
+let preWorkoutBreak = 5; // 5-second break before workout
 
 // Workout configurations
 const workoutModes = {
@@ -43,14 +44,14 @@ function startTimer(mode) {
 
   // Calculate total workout time for the progress bar
   calculateTotalTime(config);
-  
+
   // Reset state variables
   currentCycle = 0;
   currentRep = 0;
   totalCycles = Array.isArray(config.cycles) ? config.cycles.length : config.cycles;
 
-  // Start the workout
-  runWorkout(config);
+  // Start 5-second pre-workout countdown
+  startPreWorkoutBreak();
 }
 
 function calculateTotalTime(config) {
@@ -59,6 +60,28 @@ function calculateTotalTime(config) {
   } else {
     totalTime = (config.cycles * config.repsPerCycle * 7) + ((config.cycles - 1) * config.cycleBreak);
   }
+
+  // Add the pre-workout break to the total time
+  totalTime += preWorkoutBreak;
+}
+
+function startPreWorkoutBreak() {
+  document.body.className = 'yellow';  // Use the long break color
+  document.getElementById('countdown').innerText = formatTime(preWorkoutBreak);
+  
+  timeLeftGlobal = preWorkoutBreak;
+
+  timerInterval = setInterval(() => {
+    if (!paused) {
+      document.getElementById('countdown').innerText = formatTime(timeLeftGlobal);
+      timeLeftGlobal--;
+
+      if (timeLeftGlobal < 0) {
+        clearInterval(timerInterval);
+        runWorkout(config);  // Start the actual workout after the pre-workout break
+      }
+    }
+  }, 1000);
 }
 
 function runWorkout(config) {
