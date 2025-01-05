@@ -122,7 +122,7 @@ function nextPhase() {
     return;
   }
 
-  // Determine the total reps for the current cycle
+  // Get the total reps for the current cycle
   let totalReps = Array.isArray(config.cycles) ? config.cycles[currentCycle] : config.repsPerCycle;
 
   if (currentRep < totalReps) {
@@ -140,24 +140,24 @@ function nextPhase() {
         miniBreakSound.play();
 
         currentRep++;
-        nextPhase();  // Go to the next rep or phase
+        nextPhase();  // Continue reps or move to the next phase
       });
     });
   } else {
-    // If reps for the current cycle are complete, move to the next cycle
+    // Move to the next cycle after finishing all reps in the current cycle
     currentRep = 0; // Reset rep count
 
     if (currentCycle < totalCycles - 1) {
-      // Start long break between cycles
+      // Long break between cycles
       startPhase(config.cycleBreak, 'yellow', 'Long Break', () => {
         // Play long ding sound
         longBreakSound.play();
 
         currentCycle++;
-        nextPhase();  // Move to the next cycle
+        nextPhase();  // Proceed to the next cycle
       });
     } else {
-      // No long break after the last cycle
+      // No break after the last cycle
       currentCycle++;
       nextPhase();
     }
