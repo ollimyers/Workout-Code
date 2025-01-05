@@ -24,11 +24,26 @@
             <button onclick="startTimer('2xLong1xSemi')">2 x Long / 1 x Semi</button>
             <button onclick="startTimer('2xSemi1xLong')">2 x Semi / 1 x Long</button>
         </div>
-        <div id="custom-timer">
-            <label for="timer-duration">Enter Timer Duration (in seconds):</label>
-            <input type="number" id="timer-duration" placeholder="e.g., 60">
-            <button onclick="handleStartCustomTimer()">Start Timer</button>
-          </div>          
+        <div id="custom-timer" style="margin-top: 20px; text-align: center;">
+            <h3 style="color: #444; font-size: 1.5rem; margin-bottom: 10px;">Standard Timer</h3>
+            <div style="display: inline-block; text-align: left;">
+              <label for="timer-duration" style="font-size: 1rem; color: #555; display: block; margin-bottom: 5px;">
+                Enter Timer Duration:
+              </label>
+              <input
+                type="number"
+                id="timer-duration"
+                placeholder="Seconds (e.g., 60)"
+                style="padding: 10px; font-size: 1rem; border: 1px solid #ccc; border-radius: 5px; width: 150px; text-align: center;"
+              />
+            </div>
+            <button
+              onclick="handleStartCustomTimer()"
+              style="margin-left: 10px; padding: 10px 20px; font-size: 1rem; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;"
+            >
+              Start Timer
+            </button>
+          </div>                  
     </div>
     <script src="script.js"></script>
 </body>

@@ -69,4 +69,39 @@
   .yellow {
     background-color: #ffc107; /* Yellow during long break */
   }
+
+  #custom-timer {
+    margin-top: 30px;
+    padding: 20px;
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  
+  #timer-duration {
+    transition: border-color 0.3s ease;
+  }
+  
+  #timer-duration:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+  }
+  
+  button:hover {
+    background-color: #0056b3;
+  }
+  
+  button:active {
+    background-color: #004085;
+  }
+  
+  h3 {
+    font-family: 'Arial', sans-serif;
+  }
+  
   

@@ -118,13 +118,33 @@ function handleStartCustomTimer() {
   const duration = parseInt(durationInput, 10);
 
   if (isNaN(duration) || duration <= 0) {
+    // Highlight the input field if the value is invalid
+    const inputField = document.getElementById('timer-duration');
+    inputField.style.borderColor = 'red';
+    inputField.style.boxShadow = '0 0 5px red';
+    setTimeout(() => {
+      inputField.style.borderColor = '#ccc';
+      inputField.style.boxShadow = 'none';
+    }, 2000);
     alert("Please enter a valid duration in seconds.");
     return;
   }
 
-  // Start the timer with the entered duration
+  // Reset the input styling if the value is valid
+  document.getElementById('timer-duration').style.borderColor = '#ccc';
+  document.getElementById('timer-duration').style.boxShadow = 'none';
+
+  // Start the timer
   startTimer('StandardTimer', duration);
+
+  // Provide feedback that the timer has started
+  const customTimerDiv = document.getElementById('custom-timer');
+  customTimerDiv.style.backgroundColor = '#d4edda'; // Light green background
+  setTimeout(() => {
+    customTimerDiv.style.backgroundColor = '#f9f9f9'; // Reset to original color
+  }, 1000);
 }
+
 
 function calculateTotalTime(config) {
   if (Array.isArray(config.cycles)) {
