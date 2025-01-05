@@ -10,8 +10,8 @@ let wakeLock = null; // Wake Lock reference
 // Workout configurations
 const workoutModes = {
   '3x12': { cycles: 3, repsPerCycle: 12, cycleBreak: 45 },
-  '2xLong1xSemi': { cycles: 2, repsPerCycle: 12, cycleBreak: 45 },
-  '2xSemi1xLong': { cycles: [6, 12], cycleBreak: 45 }
+  '2xLong1xSemi': { cycles: [12, 12, 6], cycleBreak: 45 },
+  '2xSemi1xLong': { cycles: [6, 12, 12], cycleBreak: 45 } 
 };
 
 // Sounds for different phases
