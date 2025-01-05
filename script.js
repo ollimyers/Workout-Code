@@ -112,6 +112,7 @@ function runWorkout(config) {
 }
 
 function nextPhase() {
+  // Check if all cycles are complete
   if (currentCycle >= totalCycles) {
     // End the workout
     clearInterval(timerInterval);
@@ -121,6 +122,7 @@ function nextPhase() {
     return;
   }
 
+  // Determine the total reps for the current cycle
   let totalReps = Array.isArray(config.cycles) ? config.cycles[currentCycle] : config.repsPerCycle;
 
   if (currentRep < totalReps) {
@@ -132,33 +134,36 @@ function nextPhase() {
       // Play single ding sound
       repSound.play();
 
+      // Mini break between reps
       startPhase(2, 'green', 'Mini Break', () => {
         // Play double ding sound
         miniBreakSound.play();
 
         currentRep++;
-        nextPhase();  // Go to next phase
+        nextPhase();  // Go to the next rep or phase
       });
     });
   } else {
+    // If reps for the current cycle are complete, move to the next cycle
+    currentRep = 0; // Reset rep count
+
     if (currentCycle < totalCycles - 1) {
-      // Start long break after cycle
+      // Start long break between cycles
       startPhase(config.cycleBreak, 'yellow', 'Long Break', () => {
         // Play long ding sound
         longBreakSound.play();
 
         currentCycle++;
-        currentRep = 0;
-        nextPhase();  // Move to next cycle
+        nextPhase();  // Move to the next cycle
       });
     } else {
-      // No long break after last cycle
+      // No long break after the last cycle
       currentCycle++;
-      currentRep = 0;
       nextPhase();
     }
   }
 }
+
 
 function startPhase(duration, colorClass, label, callback) {
   clearInterval(timerInterval);
