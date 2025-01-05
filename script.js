@@ -10,7 +10,7 @@ let wakeLock = null; // Wake Lock reference
 // Workout configurations
 const workoutModes = {
   '3x12': { cycles: 3, repsPerCycle: 12, cycleBreak: 45 },
-  '2xLong1xSemi': { cycles: 2, repsPerCycle: 12, cycleBreak: 45 }, // Two cycles of 12 reps
+  '2xLong1xSemi': { cycles: 2, repsPerCycle: 12, cycleBreak: 45 }, // Two 12-rep sets
   '2xSemi1xLong': { cycles: [6, 12, 12], cycleBreak: 45 }          // Custom cycle: 6, 12, 12 reps
 };
 
@@ -157,6 +157,7 @@ function nextPhase() {
     }
   }
 }
+
 
 
 
