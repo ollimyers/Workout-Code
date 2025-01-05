@@ -161,9 +161,9 @@ function calculateTotalTime(config) {
 
 
 function startPreWorkoutBreak() {
-  document.body.className = 'yellow';  // Use the long break color
+  document.body.className = 'yellow'; // Use the long break color
   document.getElementById('countdown').innerText = formatTime(preWorkoutBreak);
-  
+
   timeLeftGlobal = preWorkoutBreak;
 
   timerInterval = setInterval(() => {
@@ -173,11 +173,14 @@ function startPreWorkoutBreak() {
 
       if (timeLeftGlobal < 0) {
         clearInterval(timerInterval);
-        runWorkout(config);  // Start the actual workout after the pre-workout break
+
+        // Start the first phase of the workout
+        runWorkout(config);
       }
     }
   }, 1000);
 }
+
 
 function runWorkout(config) {
   nextPhase();
@@ -232,28 +235,38 @@ function nextPhase() {
 
 
 function startPhase(duration, colorClass, label, callback) {
-  clearInterval(timerInterval);
-  document.body.className = colorClass;
-  document.getElementById('countdown').innerText = formatTime(duration);
+  clearInterval(timerInterval); // Clear any existing intervals
+  document.body.className = colorClass; // Set background color
+  document.getElementById('countdown').innerText = formatTime(duration); // Display timer
   document.getElementById('countdown').style.visibility = 'visible';
 
-  timeLeftGlobal = duration;
-  currentPhaseCallback = callback;
+  timeLeftGlobal = duration; // Set the time for this phase
+  currentPhaseCallback = callback; // Save the callback for the phase transition
 
   timerInterval = setInterval(() => {
     if (!paused) {
-      document.getElementById('countdown').innerText = formatTime(timeLeftGlobal);
-      updateProgress(1);  // Update progress for each second
+      document.getElementById('countdown').innerText = formatTime(timeLeftGlobal); // Update display
+      updateProgress(1); // Update progress bar
+
+      if (timeLeftGlobal === 0) {
+        // Play the appropriate sound (only at the end of the phase)
+        if (label.startsWith("Rep")) {
+          repSound.play();
+        } else if (label === "Mini Break") {
+          miniBreakSound.play();
+        } else if (label === "Long Break") {
+          longBreakSound.play();
+        }
+
+        clearInterval(timerInterval); // Clear the timer
+        callback(); // Trigger the next phase
+      }
 
       timeLeftGlobal--;
-
-      if (timeLeftGlobal < 0) {
-        clearInterval(timerInterval);
-        callback();
-      }
     }
   }, 1000);
 }
+
 
 function pauseWorkout() {
   if (!paused) {
