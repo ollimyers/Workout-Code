@@ -5,6 +5,7 @@ let paused = false;
 let timeLeftGlobal = 0;
 let currentPhaseCallback;
 let preWorkoutBreak = 5; // 5-second break before workout
+let wakeLock = null; // Wake Lock reference
 
 // Workout configurations
 const workoutModes = {
@@ -24,6 +25,25 @@ let currentRep = 0;
 let config = {};
 let totalCycles = 0;
 
+async function requestWakeLock() {
+  try {
+    wakeLock = await navigator.wakeLock.request('screen');
+    console.log('Wake Lock is active.');
+  } catch (err) {
+    console.error(`Failed to acquire Wake Lock: ${err.message}`);
+  }
+}
+
+function releaseWakeLock() {
+  if (wakeLock) {
+    wakeLock.release()
+      .then(() => {
+        console.log('Wake Lock released.');
+        wakeLock = null;
+      });
+  }
+}
+
 function startTimer(mode) {
   clearInterval(timerInterval);  // Clear any existing timers
   document.body.className = '';  // Reset background color
@@ -42,6 +62,9 @@ function startTimer(mode) {
     return;
   }
 
+  // Request Wake Lock
+  requestWakeLock();
+
   // Calculate total workout time for the progress bar
   calculateTotalTime(config);
 
@@ -56,7 +79,7 @@ function startTimer(mode) {
 
 function calculateTotalTime(config) {
   if (Array.isArray(config.cycles)) {
-    totalTime = (config.cycles[0] * 7) + (config.cycles[1] * 7) + (config.cycleBreak);  // Total time in seconds
+    totalTime = config.cycles.reduce((sum, reps) => sum + reps * 7, 0) + (config.cycles.length - 1) * config.cycleBreak;
   } else {
     totalTime = (config.cycles * config.repsPerCycle * 7) + ((config.cycles - 1) * config.cycleBreak);
   }
@@ -94,6 +117,7 @@ function nextPhase() {
     clearInterval(timerInterval);
     document.getElementById('countdown').innerText = "DONE!";
     document.body.className = '';
+    releaseWakeLock();
     return;
   }
 
