@@ -6,12 +6,14 @@ let timeLeftGlobal = 0;
 let currentPhaseCallback;
 let preWorkoutBreak = 5; // 5-second break before workout
 let wakeLock = null; // Wake Lock reference
+let customTimerDuration = 0; // Duration for the custom timer
 
-// Workout configurations
+// Extend workoutModes to include a 'Standard Timer' mode
 const workoutModes = {
   '3x12': { cycles: 3, repsPerCycle: 12, cycleBreak: 45 },
-  '2xLong1xSemi': { cycles: 2, repsPerCycle: 12, cycleBreak: 45 }, // Two 12-rep sets
-  '2xSemi1xLong': { cycles: [6, 12, 12], cycleBreak: 45 }          // Custom cycle: 6, 12, 12 reps
+  '2xLong1xSemi': { cycles: 2, repsPerCycle: 12, cycleBreak: 45 },
+  '2xSemi1xLong': { cycles: [6, 12, 12], cycleBreak: 45 },
+  'StandardTimer': { custom: true } // New mode for standard timers
 };
 
 // Sounds for different phases
@@ -43,7 +45,42 @@ function releaseWakeLock() {
   }
 }
 
-function startTimer(mode) {
+function startStandardTimer(duration) {
+  // Reset previous state
+  clearInterval(timerInterval);
+  document.body.className = ''; // Reset background color
+  document.getElementById('countdown').innerText = formatTime(duration); // Display initial duration
+  document.getElementById('progress').style.width = '0%'; // Reset progress bar
+
+  timeElapsed = 0; // Reset progress counter
+  paused = false;
+  customTimerDuration = duration; // Set the custom timer duration
+  totalTime = duration; // Set totalTime for progress tracking
+
+  // Start the timer
+  timeLeftGlobal = duration;
+  timerInterval = setInterval(() => {
+    if (!paused) {
+      document.getElementById('countdown').innerText = formatTime(timeLeftGlobal);
+      updateProgress(1); // Update progress bar
+      timeLeftGlobal--;
+
+      if (timeLeftGlobal < 0) {
+        clearInterval(timerInterval);
+        document.getElementById('countdown').innerText = "DONE!";
+        document.body.className = ''; // Reset background color
+        longBreakSound.play(); // Play a sound to indicate timer end
+      }
+    }
+  }, 1000);
+}
+
+function startTimer(mode, customDuration = 0) {
+  if (mode === 'StandardTimer') {
+    // Start the custom timer with the specified duration
+    startStandardTimer(customDuration);
+    return;
+  }
   clearInterval(timerInterval);  // Clear any existing timers
   document.body.className = '';  // Reset background color
   document.getElementById('countdown').innerText = '00:00';  // Reset countdown
