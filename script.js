@@ -113,6 +113,19 @@ function startTimer(mode, customDuration = 0) {
   startPreWorkoutBreak();
 }
 
+function handleStartCustomTimer() {
+  const durationInput = document.getElementById('timer-duration').value;
+  const duration = parseInt(durationInput, 10);
+
+  if (isNaN(duration) || duration <= 0) {
+    alert("Please enter a valid duration in seconds.");
+    return;
+  }
+
+  // Start the timer with the entered duration
+  startTimer('StandardTimer', duration);
+}
+
 function calculateTotalTime(config) {
   if (Array.isArray(config.cycles)) {
     // Custom cycles: sum reps and add breaks

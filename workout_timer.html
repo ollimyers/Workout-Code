@@ -24,6 +24,11 @@
             <button onclick="startTimer('2xLong1xSemi')">2 x Long / 1 x Semi</button>
             <button onclick="startTimer('2xSemi1xLong')">2 x Semi / 1 x Long</button>
         </div>
+        <div id="custom-timer">
+            <label for="timer-duration">Enter Timer Duration (in seconds):</label>
+            <input type="number" id="timer-duration" placeholder="e.g., 60">
+            <button onclick="handleStartCustomTimer()">Start Timer</button>
+          </div>          
     </div>
     <script src="script.js"></script>
 </body>
