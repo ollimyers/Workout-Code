@@ -187,49 +187,46 @@ function runWorkout(config) {
 }
 
 function nextPhase() {
-  // Check if all cycles are complete
   if (currentCycle >= totalCycles) {
+    // End the workout
     clearInterval(timerInterval);
     document.getElementById('countdown').innerText = "DONE!";
     document.body.className = '';
-    releaseWakeLock();
     return;
   }
 
-  // Get the total reps for the current cycle
   let totalReps = Array.isArray(config.cycles) ? config.cycles[currentCycle] : config.repsPerCycle;
 
   if (currentRep < totalReps) {
-    // Start a rep phase
+    // Start rep phase
     updateCounter(currentRep + 1, totalReps, currentCycle + 1, totalCycles);
 
     startPhase(5, 'red', `Rep ${currentRep + 1}/${totalReps}`, () => {
-      repSound.play();
-
+      repSound.play(); // Ding after each rep
       startPhase(2, 'green', 'Mini Break', () => {
-        miniBreakSound.play();
+        miniBreakSound.play(); // Double ding after mini break
         currentRep++;
-        nextPhase();
+        nextPhase(); // Go to next rep or cycle
       });
     });
   } else {
-    // End current cycle and move to the next
-    currentRep = 0; // Reset reps for the next cycle
-
     if (currentCycle < totalCycles - 1) {
-      // Start a long break before the next cycle
+      // Long break after each cycle (except the last)
       startPhase(config.cycleBreak, 'yellow', 'Long Break', () => {
-        longBreakSound.play();
+        longBreakSound.play(); // Long ding after long break
         currentCycle++;
-        nextPhase();
+        currentRep = 0;
+        nextPhase(); // Move to next cycle
       });
     } else {
-      // No break after the final cycle
+      // Final transition after last cycle
       currentCycle++;
+      currentRep = 0;
       nextPhase();
     }
   }
 }
+
 
 
 
