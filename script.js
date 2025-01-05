@@ -10,8 +10,8 @@ let wakeLock = null; // Wake Lock reference
 // Workout configurations
 const workoutModes = {
   '3x12': { cycles: 3, repsPerCycle: 12, cycleBreak: 45 },
-  '2xLong1xSemi': { cycles: [12, 12, 6], cycleBreak: 45 },
-  '2xSemi1xLong': { cycles: [6, 12, 12], cycleBreak: 45 } 
+  '2xLong1xSemi': { cycles: 2, repsPerCycle: 12, cycleBreak: 45 }, // Two cycles of 12 reps
+  '2xSemi1xLong': { cycles: [6, 12, 12], cycleBreak: 45 }          // Custom cycle: 6, 12, 12 reps
 };
 
 // Sounds for different phases
@@ -28,19 +28,18 @@ let totalCycles = 0;
 async function requestWakeLock() {
   try {
     wakeLock = await navigator.wakeLock.request('screen');
-    console.log('Wake Lock is active.');
+    console.log('Wake lock is active.');
   } catch (err) {
-    console.error(`Failed to acquire Wake Lock: ${err.message}`);
+    console.error('Failed to request wake lock:', err);
   }
 }
 
 function releaseWakeLock() {
   if (wakeLock) {
-    wakeLock.release()
-      .then(() => {
-        console.log('Wake Lock released.');
-        wakeLock = null;
-      });
+    wakeLock.release().then(() => {
+      console.log('Wake lock released.');
+      wakeLock = null;
+    });
   }
 }
 
@@ -79,14 +78,17 @@ function startTimer(mode) {
 
 function calculateTotalTime(config) {
   if (Array.isArray(config.cycles)) {
+    // Custom cycles: sum reps and add breaks
     totalTime = config.cycles.reduce((sum, reps) => sum + reps * 7, 0) + (config.cycles.length - 1) * config.cycleBreak;
   } else {
+    // Standard cycles
     totalTime = (config.cycles * config.repsPerCycle * 7) + ((config.cycles - 1) * config.cycleBreak);
   }
 
   // Add the pre-workout break to the total time
   totalTime += preWorkoutBreak;
 }
+
 
 function startPreWorkoutBreak() {
   document.body.className = 'yellow';  // Use the long break color
@@ -114,7 +116,6 @@ function runWorkout(config) {
 function nextPhase() {
   // Check if all cycles are complete
   if (currentCycle >= totalCycles) {
-    // End the workout
     clearInterval(timerInterval);
     document.getElementById('countdown').innerText = "DONE!";
     document.body.className = '';
@@ -126,43 +127,37 @@ function nextPhase() {
   let totalReps = Array.isArray(config.cycles) ? config.cycles[currentCycle] : config.repsPerCycle;
 
   if (currentRep < totalReps) {
-    // Update the counter with correct reps and sets
+    // Start a rep phase
     updateCounter(currentRep + 1, totalReps, currentCycle + 1, totalCycles);
 
-    // Start rep phase
     startPhase(5, 'red', `Rep ${currentRep + 1}/${totalReps}`, () => {
-      // Play single ding sound
       repSound.play();
 
-      // Mini break between reps
       startPhase(2, 'green', 'Mini Break', () => {
-        // Play double ding sound
         miniBreakSound.play();
-
         currentRep++;
-        nextPhase();  // Continue reps or move to the next phase
+        nextPhase();
       });
     });
   } else {
-    // Move to the next cycle after finishing all reps in the current cycle
-    currentRep = 0; // Reset rep count
+    // End current cycle and move to the next
+    currentRep = 0; // Reset reps for the next cycle
 
     if (currentCycle < totalCycles - 1) {
-      // Long break between cycles
+      // Start a long break before the next cycle
       startPhase(config.cycleBreak, 'yellow', 'Long Break', () => {
-        // Play long ding sound
         longBreakSound.play();
-
         currentCycle++;
-        nextPhase();  // Proceed to the next cycle
+        nextPhase();
       });
     } else {
-      // No break after the last cycle
+      // No break after the final cycle
       currentCycle++;
       nextPhase();
     }
   }
 }
+
 
 
 function startPhase(duration, colorClass, label, callback) {
