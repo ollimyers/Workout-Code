@@ -7,6 +7,9 @@ let currentPhaseCallback;
 let preWorkoutBreak = 5; // 5-second break before workout
 let wakeLock = null; // Wake Lock reference
 let customTimerDuration = 0; // Duration for the custom timer
+let phaseEndTime = null;
+let pausedAt = null;
+let audioPrimed = false;
 
 // Extend workoutModes to include a 'Standard Timer' mode
 const workoutModes = {
@@ -21,13 +24,90 @@ const repSound = new Audio('ding.mp3'); // Single ding sound
 const miniBreakSound = new Audio('double-ding.mp3'); // Double ding sound
 const longBreakSound = new Audio('long-ding.mp3'); // Long ding sound
 
+[repSound, miniBreakSound, longBreakSound].forEach((sound) => {
+  sound.preload = 'auto';
+});
+
 // State variables for phases
 let currentCycle = 0;
 let currentRep = 0;
 let config = {};
 let totalCycles = 0;
 
+function setAmbientAudioSession() {
+  try {
+    if (navigator.audioSession && typeof navigator.audioSession.type === 'string') {
+      navigator.audioSession.type = 'ambient';
+    }
+  } catch (err) {
+    console.warn('Could not set audio session type:', err);
+  }
+}
+
+function primeAudio() {
+  if (audioPrimed) {
+    return;
+  }
+
+  audioPrimed = true;
+  setAmbientAudioSession();
+
+  [repSound, miniBreakSound, longBreakSound].forEach((sound) => {
+    sound.muted = true;
+    const playAttempt = sound.play();
+    if (playAttempt && typeof playAttempt.then === 'function') {
+      playAttempt
+        .then(() => {
+          sound.pause();
+          sound.currentTime = 0;
+          sound.muted = false;
+        })
+        .catch(() => {
+          sound.muted = false;
+        });
+    } else {
+      sound.muted = false;
+    }
+  });
+}
+
+function playSound(sound) {
+  if (!sound) {
+    return;
+  }
+
+  sound.currentTime = 0;
+  const playAttempt = sound.play();
+  if (playAttempt && typeof playAttempt.catch === 'function') {
+    playAttempt.catch((err) => {
+      console.warn('Sound playback was blocked:', err);
+    });
+  }
+}
+
+function getRemainingSeconds() {
+  if (phaseEndTime === null) {
+    return timeLeftGlobal;
+  }
+
+  return Math.max(0, Math.ceil((phaseEndTime - Date.now()) / 1000));
+}
+
+function finishTimer() {
+  clearInterval(timerInterval);
+  phaseEndTime = null;
+  pausedAt = null;
+  currentPhaseCallback = null;
+  document.getElementById('countdown').innerText = 'DONE!';
+  document.body.className = '';
+  releaseWakeLock();
+}
+
 async function requestWakeLock() {
+  if (wakeLock) {
+    return;
+  }
+
   try {
     wakeLock = await navigator.wakeLock.request('screen');
     console.log('Wake lock is active.');
@@ -46,8 +126,14 @@ function releaseWakeLock() {
 }
 
 function startStandardTimer(duration) {
+  primeAudio();
+  requestWakeLock();
+
   // Reset previous state
   clearInterval(timerInterval);
+  phaseEndTime = null;
+  pausedAt = null;
+  currentPhaseCallback = null;
   document.body.className = ''; // Reset background color
   document.getElementById('countdown').innerText = formatTime(duration); // Display initial duration
   document.getElementById('progress').style.width = '0%'; // Reset progress bar
@@ -59,29 +145,42 @@ function startStandardTimer(duration) {
 
   // Start the timer
   timeLeftGlobal = duration;
+  phaseEndTime = Date.now() + (duration * 1000);
+  currentPhaseCallback = () => {
+    finishTimer();
+    playSound(longBreakSound);
+  };
+
   timerInterval = setInterval(() => {
     if (!paused) {
-      document.getElementById('countdown').innerText = formatTime(timeLeftGlobal);
-      updateProgress(1); // Update progress bar
-      timeLeftGlobal--;
+      const remaining = getRemainingSeconds();
+      const elapsedThisTick = Math.max(0, timeLeftGlobal - remaining);
+      if (elapsedThisTick > 0) {
+        updateProgress(elapsedThisTick); // Update progress bar
+      }
 
-      if (timeLeftGlobal < 0) {
-        clearInterval(timerInterval);
-        document.getElementById('countdown').innerText = "DONE!";
-        document.body.className = ''; // Reset background color
-        longBreakSound.play(); // Play a sound to indicate timer end
+      timeLeftGlobal = remaining;
+      document.getElementById('countdown').innerText = formatTime(timeLeftGlobal);
+
+      if (timeLeftGlobal <= 0) {
+        currentPhaseCallback();
       }
     }
-  }, 1000);
+  }, 250);
 }
 
 function startTimer(mode, customDuration = 0) {
+  primeAudio();
+
   if (mode === 'StandardTimer') {
     // Start the custom timer with the specified duration
     startStandardTimer(customDuration);
     return;
   }
   clearInterval(timerInterval);  // Clear any existing timers
+  phaseEndTime = null;
+  pausedAt = null;
+  currentPhaseCallback = null;
   document.body.className = '';  // Reset background color
   document.getElementById('countdown').innerText = '00:00';  // Reset countdown
   document.getElementById('progress').style.width = '0%';  // Reset progress bar
@@ -165,20 +264,29 @@ function startPreWorkoutBreak() {
   document.getElementById('countdown').innerText = formatTime(preWorkoutBreak);
 
   timeLeftGlobal = preWorkoutBreak;
+  phaseEndTime = Date.now() + (preWorkoutBreak * 1000);
+  currentPhaseCallback = () => {
+    clearInterval(timerInterval);
+    phaseEndTime = null;
+    runWorkout(config);
+  };
 
   timerInterval = setInterval(() => {
     if (!paused) {
+      const remaining = getRemainingSeconds();
+      const elapsedThisTick = Math.max(0, timeLeftGlobal - remaining);
+      if (elapsedThisTick > 0) {
+        updateProgress(elapsedThisTick);
+      }
+
+      timeLeftGlobal = remaining;
       document.getElementById('countdown').innerText = formatTime(timeLeftGlobal);
-      timeLeftGlobal--;
 
-      if (timeLeftGlobal < 0) {
-        clearInterval(timerInterval);
-
-        // Start the first phase of the workout
-        runWorkout(config);
+      if (timeLeftGlobal <= 0) {
+        currentPhaseCallback();
       }
     }
-  }, 1000);
+  }, 250);
 }
 
 
@@ -189,9 +297,7 @@ function runWorkout(config) {
 function nextPhase() {
   if (currentCycle >= totalCycles) {
     // End the workout
-    clearInterval(timerInterval);
-    document.getElementById('countdown').innerText = "DONE!";
-    document.body.className = '';
+    finishTimer();
     return;
   }
 
@@ -202,9 +308,7 @@ function nextPhase() {
     updateCounter(currentRep + 1, totalReps, currentCycle + 1, totalCycles);
 
     startPhase(5, 'red', `Rep ${currentRep + 1}/${totalReps}`, () => {
-      repSound.play(); // Ding after each rep
       startPhase(2, 'green', 'Mini Break', () => {
-        miniBreakSound.play(); // Double ding after mini break
         currentRep++;
         nextPhase(); // Go to next rep or cycle
       });
@@ -213,7 +317,6 @@ function nextPhase() {
     if (currentCycle < totalCycles - 1) {
       // Long break after each cycle (except the last)
       startPhase(config.cycleBreak, 'yellow', 'Long Break', () => {
-        longBreakSound.play(); // Long ding after long break
         currentCycle++;
         currentRep = 0;
         nextPhase(); // Move to next cycle
@@ -238,52 +341,77 @@ function startPhase(duration, colorClass, label, callback) {
   document.getElementById('countdown').style.visibility = 'visible';
 
   timeLeftGlobal = duration; // Set the time for this phase
+  phaseEndTime = Date.now() + (duration * 1000);
   currentPhaseCallback = callback; // Save the callback for the phase transition
 
   timerInterval = setInterval(() => {
     if (!paused) {
-      document.getElementById('countdown').innerText = formatTime(timeLeftGlobal); // Update display
-      updateProgress(1); // Update progress bar
+      const remaining = getRemainingSeconds();
+      const elapsedThisTick = Math.max(0, timeLeftGlobal - remaining);
+      if (elapsedThisTick > 0) {
+        updateProgress(elapsedThisTick); // Update progress bar
+      }
 
-      if (timeLeftGlobal === 0) {
+      timeLeftGlobal = remaining;
+      document.getElementById('countdown').innerText = formatTime(timeLeftGlobal); // Update display
+
+      if (timeLeftGlobal <= 0) {
         // Play the appropriate sound (only at the end of the phase)
         if (label.startsWith("Rep")) {
-          repSound.play();
+          playSound(repSound);
         } else if (label === "Mini Break") {
-          miniBreakSound.play();
+          playSound(miniBreakSound);
         } else if (label === "Long Break") {
-          longBreakSound.play();
+          playSound(longBreakSound);
         }
 
+        phaseEndTime = null;
         clearInterval(timerInterval); // Clear the timer
         callback(); // Trigger the next phase
       }
-
-      timeLeftGlobal--;
     }
-  }, 1000);
+  }, 250);
 }
 
 
 function pauseWorkout() {
   if (!paused) {
     paused = true;
+    pausedAt = Date.now();
     document.getElementById('pause-btn').innerText = "Resume";
   } else {
     paused = false;
+    if (phaseEndTime !== null && pausedAt !== null) {
+      phaseEndTime += Date.now() - pausedAt;
+    }
+    pausedAt = null;
     document.getElementById('pause-btn').innerText = "Pause";
   }
 }
 
 function skipPhase() {
   clearInterval(timerInterval);
-  timeElapsed += timeLeftGlobal;  // Add remaining time to elapsed time
-  currentPhaseCallback();  // Call the callback to move to the next phase
+  if (timeLeftGlobal > 0) {
+    updateProgress(timeLeftGlobal);
+  }
+  phaseEndTime = null;
+
+  if (typeof currentPhaseCallback === 'function') {
+    currentPhaseCallback();
+  } else {
+    finishTimer();
+  }
 }
 
 function rewindPhase() {
+  if (!config || Object.keys(config).length === 0) {
+    return;
+  }
+
   clearInterval(timerInterval);
-  timeElapsed -= 7;  // Rewind time for the last rep/break duration (5+2 seconds)
+  phaseEndTime = null;
+  timeElapsed = Math.max(0, timeElapsed - 7); // Rewind progress for one rep + mini break
+  updateProgress(0);
 
   if (currentRep > 0) {
     // Move back to the previous rep
@@ -299,10 +427,17 @@ function rewindPhase() {
 
 function updateProgress(seconds) {
   timeElapsed += seconds;  // Update elapsed time by seconds
+  if (totalTime <= 0) {
+    document.getElementById('progress').style.width = '0%';
+    return;
+  }
+
   const progressPercentage = (timeElapsed / totalTime) * 100;
 
   if (progressPercentage <= 100) {
     document.getElementById('progress').style.width = `${progressPercentage}%`;
+  } else {
+    document.getElementById('progress').style.width = '100%';
   }
 }
 
@@ -311,7 +446,26 @@ function updateCounter(rep, totalReps, cycle, totalCycles) {
 }
 
 function formatTime(seconds) {
+  if (seconds < 0) {
+    seconds = 0;
+  }
+
   let min = Math.floor(seconds / 60);
   let sec = seconds % 60;
   return `${min < 10 ? '0' : ''}${min}:${sec < 10 ? '0' : ''}${sec}`;
 }
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && wakeLock === null && !paused && timeLeftGlobal > 0) {
+    requestWakeLock();
+  }
+
+  if (!paused && phaseEndTime !== null) {
+    const remaining = getRemainingSeconds();
+    timeLeftGlobal = remaining;
+    document.getElementById('countdown').innerText = formatTime(remaining);
+  }
+});
+
+document.addEventListener('click', primeAudio, { once: true });
+document.addEventListener('touchstart', primeAudio, { once: true });
